@@ -13,13 +13,11 @@
   
 
 
-👋 Join our community for discussion and support!   
- [Feishu](./assets/feishu-group.png)  |  [Discord](https://discord.gg/KZUx7tVNwz)
+
 
 VoxCPM is a **tokenizer-free** Text-to-Speech system that directly generates continuous speech representations via an end-to-end **diffusion autoregressive architecture**, bypassing discrete tokenization to achieve highly natural and expressive synthesis.
 
-**VoxCPM2** is the latest major release — a **2B** parameter model trained on **over 2 million hours** of multilingual speech data, now supporting **30 languages**, **Voice Design**, **Controllable Voice Cloning**, and **48kHz** studio-quality audio output. Built on a [MiniCPM-4](https://github.com/OpenBMB/MiniCPM) backbone.
-
+**VoxCPM2** is the latest major release — a **2B** parameter model trained on **over 2 million hours** of multilingual speech data, now supporting **30 languages**, **Voice Design**, **Controllable Voice Cloning**, and **48kHz** studio-quality audio output.
 ### ✨ Highlights
 
 - 🌍 **30-Language Multilingual** — Input text in any of the 30 supported languages and synthesize directly, no language tag needed
@@ -562,12 +560,7 @@ Full documentation: **[voxcpm.readthedocs.io](https://voxcpm.readthedocs.io/en/l
 
 ---
 
-## ⚠️ Risks and Limitations
 
-- **Potential for Misuse:** VoxCPM's voice cloning can generate highly realistic synthetic speech. It is **strictly forbidden** to use VoxCPM for impersonation, fraud, or disinformation. We strongly recommend clearly marking any AI-generated content.
-- **Controllable Generation Stability:** Voice Design and Controllable Voice Cloning results can vary between runs — you may try to generate 1~3 times to obtain the desired voice or style. We are actively working on improving controllability consistency.
-- **Language Coverage:** VoxCPM2 officially supports 30 languages. For languages not on the list, you are welcome to test directly or try fine-tuning on your own data. We plan to expand language coverage in future releases.
-- **Usage:** This model is released under the Apache-2.0 license. For production deployments, we recommend conducting thorough testing and safety evaluation tailored to your use case.
 
 ---
 
@@ -591,9 +584,7 @@ If you find VoxCPM helpful, please consider citing our work and starring ⭐ the
 }
 ```
 
-## 📄 License
 
-VoxCPM model weights and code are open-sourced under the [Apache-2.0](LICENSE) license.
 
 ## 🙏 Acknowledgments
 
