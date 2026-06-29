@@ -65,11 +65,11 @@ Public interface:
 - `PACE_TAGS: dict[str, str]` — `{"slow": "slow", "fast": "fast"}`.
 - `ENERGY_TAGS: dict[str, str]` — `{"low energy": "low energy", "high energy": "high energy",
   "energetic": "energetic", "active": "active", "passive": "passive"}`.
-- `PAUSE_TAGS: dict[str, float]` — `{"short pause": 0.30, "long pause": 0.70}`.
+- `PAUSE_TAGS: dict[str, float]` — `{"short pause": 1.0, "long pause": 2.0}`.
 - `SKIP_TAGS: set[str]` — non-verbal sounds skipped in v1 (`{"laughs"}`).
 - `@dataclass Segment` — `kind: Literal["speech","silence"]`, `text: str = ""`,
   `control: str = ""`, `duration: float = 0.0`.
-- `parse_tagged_script(text: str, *, short_pause: float = 0.30, long_pause: float = 0.70)
+- `parse_tagged_script(text: str, *, short_pause: float = 1.0, long_pause: float = 2.0)
   -> list[Segment]` — the parser.
 - `build_control(emotion: str, pace: str, energy: str) -> str` — comma-joins the active
   adjective + pace word + energy word, skipping empties; returns `""` when nothing active.
@@ -88,7 +88,7 @@ Public interface:
 
 Add a thin method on `VoxCPM`:
 
-- `generate_from_tagged_script(self, text, *, short_pause=0.30, long_pause=0.70,
+- `generate_from_tagged_script(self, text, *, short_pause=1.0, long_pause=2.0,
   **generate_kwargs) -> np.ndarray` — parses then drives, wiring `self.generate` as the
   callable and `self.tts_model.sample_rate` as the sample rate. All other generate kwargs
   (`reference_wav_path`, `prompt_wav_path`, `prompt_text`, `cfg_value`, `normalize`, etc.)
@@ -144,7 +144,7 @@ Parser unit tests (`tests/test_audio_tags.py`):
 - single emotion tag → one speech segment with expected control
 - emotion persists across untagged text until next emotion tag
 - pace + energy compose into the control string in order
-- `[short pause]` / `[long pause]` emit silence segments of 0.30 / 0.70 s
+- `[short pause]` / `[long pause]` emit silence segments of 1.0 / 2.0 s
 - unknown tag is stripped, warns, and never appears in any segment text
 - `[laughs]` is stripped and emits nothing
 - adjacent identical-control text merges into one segment
