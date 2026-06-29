@@ -115,3 +115,54 @@ def test_no_tags_single_empty_control_segment():
 def test_whitespace_only_text_dropped():
     segs = at.parse_tagged_script("[fear]   [suspicion]Real")
     assert _speech(segs) == [("Real", "suspicious")]
+
+
+import numpy as np
+import pytest
+
+
+def _fake_generate(records):
+    def gen(text, **kwargs):
+        records.append(text)
+        return np.ones(4, dtype=np.float32)
+    return gen
+
+
+def test_speech_segment_uses_control_prefix():
+    records = []
+    segs = [at.Segment("speech", text="Hi", control="fearful")]
+    out = at.synthesize_tagged_script(_fake_generate(records), segs, sample_rate=16000)
+    assert records == ["(fearful)Hi"]
+    assert out.shape[0] == 4
+
+
+def test_speech_segment_without_control_has_no_prefix():
+    records = []
+    segs = [at.Segment("speech", text="Hi", control="")]
+    at.synthesize_tagged_script(_fake_generate(records), segs, sample_rate=16000)
+    assert records == ["Hi"]
+
+
+def test_silence_segment_inserts_zero_samples():
+    segs = [at.Segment("silence", duration=2.0)]
+    out = at.synthesize_tagged_script(_fake_generate([]), segs, sample_rate=10)
+    assert out.shape[0] == 20
+    assert not out.any()  # all zeros
+
+
+def test_output_is_concatenation_in_order():
+    records = []
+    segs = [
+        at.Segment("speech", text="A", control="x"),
+        at.Segment("silence", duration=1.0),
+        at.Segment("speech", text="B", control="x"),
+    ]
+    out = at.synthesize_tagged_script(_fake_generate(records), segs, sample_rate=10)
+    # 4 (speech) + 10 (silence) + 4 (speech) = 18
+    assert out.shape[0] == 18
+    assert records == ["(x)A", "(x)B"]
+
+
+def test_empty_segments_raises():
+    with pytest.raises(ValueError):
+        at.synthesize_tagged_script(_fake_generate([]), [], sample_rate=16000)

@@ -203,3 +203,36 @@ def parse_tagged_script(
         else:
             merged.append(seg)
     return merged
+
+
+def synthesize_tagged_script(
+    generate,
+    segments,
+    *,
+    sample_rate,
+    silence_dtype=None,
+    **generate_kwargs,
+):
+    """Drive VoxCPM over parsed segments and concatenate into one waveform.
+
+    ``generate`` is a callable (e.g. ``VoxCPM.generate``) invoked per speech
+    segment as ``generate(text=..., **generate_kwargs)``. Silence segments
+    become ``int(duration * sample_rate)`` zero samples. numpy is imported
+    here so the parser stays numpy-free.
+    """
+    import numpy as np
+
+    if not segments:
+        raise ValueError("no segments to synthesize (empty or whitespace-only input)")
+    if silence_dtype is None:
+        silence_dtype = np.float32
+
+    chunks = []
+    for seg in segments:
+        if seg.kind == "speech":
+            text = f"({seg.control}){seg.text}" if seg.control else seg.text
+            chunks.append(generate(text=text, **generate_kwargs))
+        else:  # silence
+            n = int(seg.duration * sample_rate)
+            chunks.append(np.zeros(n, dtype=silence_dtype))
+    return np.concatenate(chunks)
