@@ -142,3 +142,64 @@ def _emotion_adjective(tag: str) -> str:
     if tag in TAG_ADJECTIVES:
         return TAG_ADJECTIVES[tag]
     return FAMILY_ADJECTIVES[TAG_FAMILIES[tag]]
+
+
+_TAG_RE = re.compile(r"\[([^\]]+)\]")
+
+
+def parse_tagged_script(
+    text: str,
+    *,
+    short_pause: float = PAUSE_TAGS["short pause"],
+    long_pause: float = PAUSE_TAGS["long pause"],
+) -> list[Segment]:
+    """Parse ``[tag]`` markup into an ordered list of speech/silence Segments.
+
+    Emotion/pace/energy state persists across untagged text until changed.
+    Pause tags emit silence and never alter emotion/pace/energy. Unknown tags
+    are stripped and warned. Adjacent speech with identical control is merged.
+    """
+    pause_map = {"short pause": short_pause, "long pause": long_pause}
+    cur_emotion = cur_pace = cur_energy = ""
+    raw: list[Segment] = []
+
+    # re.split with a capturing group yields: text, tag, text, tag, ... text
+    parts = _TAG_RE.split(text)
+    for i, part in enumerate(parts):
+        if i % 2 == 0:  # plain text
+            speech = part.strip()
+            if speech:
+                raw.append(Segment(
+                    "speech",
+                    text=speech,
+                    control=build_control(cur_emotion, cur_pace, cur_energy),
+                ))
+            continue
+
+        tag = part.strip().lower()
+        if tag in pause_map:
+            raw.append(Segment("silence", duration=pause_map[tag]))
+        elif tag in PACE_TAGS:
+            cur_pace = PACE_TAGS[tag]
+        elif tag in ENERGY_TAGS:
+            cur_energy = ENERGY_TAGS[tag]
+        elif tag in SKIP_TAGS:
+            pass
+        elif tag in TAG_ADJECTIVES or tag in TAG_FAMILIES:
+            cur_emotion = _emotion_adjective(tag)
+        else:
+            warnings.warn(f"Unknown audio tag [{tag}] — stripped, not spoken")
+
+    # merge adjacent speech segments with identical control
+    merged: list[Segment] = []
+    for seg in raw:
+        if (
+            seg.kind == "speech"
+            and merged
+            and merged[-1].kind == "speech"
+            and merged[-1].control == seg.control
+        ):
+            merged[-1].text += " " + seg.text
+        else:
+            merged.append(seg)
+    return merged
