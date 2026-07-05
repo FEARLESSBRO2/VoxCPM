@@ -18,9 +18,9 @@ the tags). This spec covers execution only.
 ## Tag vocabulary (input)
 
 The full tag set is the 212 tags documented in the step02 AUDIO TAG PERFORMANCE SYSTEM,
-grouped into 8 families plus the mechanics group. Categories the interpreter recognizes:
+grouped into 7 families plus the mechanics group. Categories the interpreter recognizes:
 
-- **Emotion tags** (~199): map to a control adjective phrase.
+- **Emotion tags** (201): map to a control adjective phrase.
 - **Pace tags**: `[slow]`, `[fast]`.
 - **Energy tags**: `[low energy]`, `[high energy]`, `[energetic]`, `[active]`, `[passive]`.
 - **Pause tags**: `[short pause]`, `[long pause]`.
@@ -60,7 +60,7 @@ Public interface:
 
 - `TAG_ADJECTIVES: dict[str, str]` — per-tag adjective overrides (e.g. `"fear" -> "fearful, tense"`,
   `"nostalgia" -> "wistful, warm"`, `"whispers" -> "whispering, breathy"`).
-- `TAG_FAMILIES: dict[str, str]` — every emotion tag → one of 8 family keys; family supplies a
+- `TAG_FAMILIES: dict[str, str]` — every emotion tag → one of 7 family keys; family supplies a
   fallback adjective when a tag has no explicit override.
 - `PACE_TAGS: dict[str, str]` — `{"slow": "slow", "fast": "fast"}`.
 - `ENERGY_TAGS: dict[str, str]` — `{"low energy": "low energy", "high energy": "high energy",

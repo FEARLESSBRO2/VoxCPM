@@ -3,7 +3,11 @@ from __future__ import annotations
 import importlib.util
 import sys
 import types
+import warnings as _warnings
 from pathlib import Path
+
+import numpy as np
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 AT_PATH = ROOT / "src" / "voxcpm" / "audio_tags.py"
@@ -38,9 +42,6 @@ def test_emotion_adjective_override_beats_family():
     assert at._emotion_adjective("fear") == "fearful, tense"   # override
     assert at._emotion_adjective("interest") == "curious"      # family fallback (curiosity)
     assert at._emotion_adjective("whispers") == "whispering, breathy"
-
-
-import warnings as _warnings
 
 
 def _speech(segs):
@@ -117,10 +118,6 @@ def test_whitespace_only_text_dropped():
     assert _speech(segs) == [("Real", "suspicious")]
 
 
-import numpy as np
-import pytest
-
-
 def _fake_generate(records):
     def gen(text, **kwargs):
         records.append(text)
@@ -161,15 +158,15 @@ def test_output_is_concatenation_in_order():
     # 4 (speech) + 10 (silence) + 4 (speech) = 18
     assert out.shape[0] == 18
     assert records == ["(x)A", "(x)B"]
+    # Verify positional content
+    assert out[:4].all()          # speech A nonzero
+    assert not out[4:14].any()    # silence is zero
+    assert out[14:].all()         # speech B nonzero
 
 
 def test_empty_segments_raises():
     with pytest.raises(ValueError):
         at.synthesize_tagged_script(_fake_generate([]), [], sample_rate=16000)
-
-
-import sys
-import types
 
 
 def _load_core():
