@@ -177,6 +177,35 @@ class VoxCPM:
     def generate_streaming(self, *args, **kwargs) -> Generator[np.ndarray, None, None]:
         return self._generate(*args, streaming=True, **kwargs)
 
+    def generate_from_tagged_script(
+        self,
+        text: str,
+        *,
+        short_pause: float = 1.0,
+        long_pause: float = 2.0,
+        **generate_kwargs,
+    ) -> np.ndarray:
+        """Synthesize a script containing Gemini-style ``[tag]`` audio tags.
+
+        Parses the tags into speech/silence segments (emotion/pace/energy →
+        VoxCPM control instructions, pause tags → inserted silence), then drives
+        ``self.generate`` per speech segment and concatenates. All other kwargs
+        (``reference_wav_path``, ``prompt_wav_path``, ``prompt_text``,
+        ``cfg_value``, ``normalize``, etc.) pass straight through unchanged so
+        timbre/clone settings stay stable across segments.
+        """
+        from .audio_tags import parse_tagged_script, synthesize_tagged_script
+
+        segments = parse_tagged_script(
+            text, short_pause=short_pause, long_pause=long_pause
+        )
+        return synthesize_tagged_script(
+            self.generate,
+            segments,
+            sample_rate=self.tts_model.sample_rate,
+            **generate_kwargs,
+        )
+
     def _generate(
         self,
         text: str,

@@ -166,3 +166,60 @@ def test_output_is_concatenation_in_order():
 def test_empty_segments_raises():
     with pytest.raises(ValueError):
         at.synthesize_tagged_script(_fake_generate([]), [], sample_rate=16000)
+
+
+import sys
+import types
+
+
+def _load_core():
+    """Load src/voxcpm/core.py with heavy deps stubbed (no torch/model load)."""
+    pkg = types.ModuleType("voxcpm")
+    pkg.__path__ = [str(ROOT / "src" / "voxcpm")]
+    sys.modules["voxcpm"] = pkg
+
+    hf = types.ModuleType("huggingface_hub")
+    hf.snapshot_download = lambda *a, **k: None
+    sys.modules["huggingface_hub"] = hf
+
+    model_pkg = types.ModuleType("voxcpm.model")
+    model_pkg.__path__ = []
+    mv = types.ModuleType("voxcpm.model.voxcpm")
+    mv.VoxCPMModel = type("VoxCPMModel", (), {})
+    mv.LoRAConfig = type("LoRAConfig", (), {})
+    mv2 = types.ModuleType("voxcpm.model.voxcpm2")
+    mv2.VoxCPM2Model = type("VoxCPM2Model", (), {})
+    mu = types.ModuleType("voxcpm.model.utils")
+    mu.next_and_close = lambda x: x
+    sys.modules.update({
+        "voxcpm.model": model_pkg,
+        "voxcpm.model.voxcpm": mv,
+        "voxcpm.model.voxcpm2": mv2,
+        "voxcpm.model.utils": mu,
+    })
+
+    path = ROOT / "src" / "voxcpm" / "core.py"
+    spec = importlib.util.spec_from_file_location("voxcpm.core", path)
+    core = importlib.util.module_from_spec(spec)
+    sys.modules["voxcpm.core"] = core
+    spec.loader.exec_module(core)
+    return core
+
+
+def test_generate_from_tagged_script_wires_parser_and_driver():
+    core = _load_core()
+    vox = core.VoxCPM.__new__(core.VoxCPM)  # bypass __init__ (no model load)
+    vox.tts_model = types.SimpleNamespace(sample_rate=10)
+
+    calls = []
+
+    def fake_gen(text, **kwargs):
+        calls.append(text)
+        return np.ones(2, dtype=np.float32)
+
+    vox.generate = fake_gen  # instance attr shadows the class method
+
+    out = vox.generate_from_tagged_script("[fear]Hi[long pause]Bye")
+    # speech Hi (2) + silence 2.0*10 (20) + speech Bye (2) = 24
+    assert out.shape[0] == 24
+    assert calls == ["(fearful, tense)Hi", "(fearful, tense)Bye"]
